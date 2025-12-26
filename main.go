@@ -11,12 +11,9 @@ import (
 )
 
 func main() {
-	dbURL := os.Getenv("DBURL")
-	db, err := sql.Open("postgres", dbURL)
-
-	dbQueries := database.New(db)
-
 	cfg, err := config.Read()
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	dbQueries := database.New(db)
 	if err != nil {
 		log.Fatalf("failed to read config: %v", err)
 		return

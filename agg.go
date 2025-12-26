@@ -29,7 +29,6 @@ func scrapeFeeds(s *state) error {
 		if err != nil {
 			return fmt.Errorf("couldn't formate published date")
 		}
-		fmt.Println(item)
 		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
 			ID:          uuid.New(),
 			CreatedAt:   sql.NullTime{Time: time.Now(), Valid: true},
