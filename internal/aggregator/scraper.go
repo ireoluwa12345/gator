@@ -1,4 +1,4 @@
-package main
+package aggregator
 
 import (
 	"context"
@@ -8,28 +8,30 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/ireoluwa12345/gator/internal/database"
+	"github.com/ireoluwa12345/gator/internal/domain"
+	"github.com/ireoluwa12345/gator/internal/rss"
 	"github.com/lib/pq"
 )
 
-func scrapeFeeds(s *state) error {
-	feed, err := s.db.GetNextFeedToFetch(context.Background())
+func ScrapeFeeds(s *domain.State) error {
+	feed, err := s.DB.GetNextFeedToFetch(context.Background())
 	if err != nil {
 		return err
 	}
 
-	err = s.db.MarkFeedFetched(context.Background(), feed.ID)
+	err = s.DB.MarkFeedFetched(context.Background(), feed.ID)
 	if err != nil {
 		return err
 	}
 
-	feedData, err := fetchFeed(context.Background(), feed.Url)
+	feedData, err := rss.FetchFeed(context.Background(), feed.Url)
 
 	for _, item := range feedData.Channel.Item {
 		formattedTime, err := time.Parse("Mon, 02 Jan 2006 15:04:05 -0700", item.PubDate)
 		if err != nil {
 			return fmt.Errorf("couldn't formate published date")
 		}
-		_, err = s.db.CreatePost(context.Background(), database.CreatePostParams{
+		_, err = s.DB.CreatePost(context.Background(), database.CreatePostParams{
 			ID:          uuid.New(),
 			CreatedAt:   sql.NullTime{Time: time.Now(), Valid: true},
 			UpdatedAt:   sql.NullTime{Time: time.Now(), Valid: true},

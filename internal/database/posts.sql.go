@@ -54,3 +54,37 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 	)
 	return i, err
 }
+
+const fetchUserPosts = `-- name: FetchUserPosts :many
+SELECT posts.title, posts.url FROM posts
+JOIN feed_follow ON posts.feed_id = feed_follow.feed_id
+WHERE feed_follow.user_id = $1
+`
+
+type FetchUserPostsRow struct {
+	Title string
+	Url   string
+}
+
+func (q *Queries) FetchUserPosts(ctx context.Context, userID uuid.UUID) ([]FetchUserPostsRow, error) {
+	rows, err := q.db.QueryContext(ctx, fetchUserPosts, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FetchUserPostsRow
+	for rows.Next() {
+		var i FetchUserPostsRow
+		if err := rows.Scan(&i.Title, &i.Url); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
