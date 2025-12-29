@@ -14,6 +14,8 @@ import (
 )
 
 func ScrapeFeeds(s *domain.State) error {
+	var formattedTime time.Time
+
 	feed, err := s.DB.GetNextFeedToFetch(context.Background())
 	if err != nil {
 		return err
@@ -27,10 +29,16 @@ func ScrapeFeeds(s *domain.State) error {
 	feedData, err := rss.FetchFeed(context.Background(), feed.Url)
 
 	for _, item := range feedData.Channel.Item {
-		formattedTime, err := time.Parse("Mon, 02 Jan 2006 15:04:05 -0700", item.PubDate)
+		formattedTime, err = time.Parse(time.RFC1123Z, item.PubDate)
+
 		if err != nil {
-			return fmt.Errorf("couldn't formate published date")
+			formattedTime, err = time.Parse(time.RFC1123, item.PubDate)
 		}
+
+		if err != nil {
+			return fmt.Errorf("couldn't parse published date '%s': %w", item.PubDate, err)
+		}
+
 		_, err = s.DB.CreatePost(context.Background(), database.CreatePostParams{
 			ID:          uuid.New(),
 			CreatedAt:   sql.NullTime{Time: time.Now(), Valid: true},
@@ -50,6 +58,7 @@ func ScrapeFeeds(s *domain.State) error {
 				fmt.Printf("error occurred: %v\n", err)
 			}
 		}
+		fmt.Printf("%s\n", item.Title)
 		time.Sleep(2 * time.Second)
 	}
 
