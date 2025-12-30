@@ -44,7 +44,7 @@ func HandleAddFeed(s *domain.State, cmd Command, user database.GetUserRow) error
 		}
 	}
 
-	fmt.Println(feed)
+	fmt.Printf("%s added to feeds", feed.Name)
 
 	return nil
 }
@@ -72,9 +72,9 @@ func HandleFollow(s *domain.State, cmd Command, user database.GetUserRow) error 
 		return fmt.Errorf("the handler expects the feed name")
 	}
 
-	feedUrl := cmd.CommandArgs[0]
+	feedName := cmd.CommandArgs[0]
 
-	feed, err := s.DB.GetFeedByUrl(context.Background(), feedUrl)
+	feed, err := s.DB.GetFeedByName(context.Background(), feedName)
 	if err != nil {
 		return fmt.Errorf("error occurred while fetching feed: %w", err)
 	}
